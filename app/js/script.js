@@ -3,7 +3,7 @@ document.querySelector('#connect').addEventListener('click', function () {
     const debugElem = document.querySelector('#debug');
 
     statusElem.textContent = 'Scanning for devices...';
-    debugElem.textContent = ''; // Clear debug logs
+    debugElem.textContent = '';
 
     navigator.bluetooth.requestDevice({
         filters: [{ services: ['4fafc201-1fb5-459e-8fcc-c5c9c331914b'] }]
@@ -22,23 +22,20 @@ document.querySelector('#connect').addEventListener('click', function () {
     .then(server => server.getPrimaryService('4fafc201-1fb5-459e-8fcc-c5c9c331914b'))
     .then(service => service.getCharacteristic('beb5483e-36e1-4688-b7f5-ea07361b26a8'))
     .then(characteristic => {
-        statusElem.textContent = 'Connected! Ready to control LED';
         debugElem.textContent += 'Characteristic found!\n';
+        statusElem.textContent = 'Connected! Ready to control LED';
 
-        // Bind ON and OFF buttons
-        document.querySelector('#ledOn').addEventListener('click', () => {
-            characteristic.writeValue(new TextEncoder().encode('ON'));
-            debugElem.textContent += 'Sent: ON\n';
-        });
-
-        document.querySelector('#ledOff').addEventListener('click', () => {
-            characteristic.writeValue(new TextEncoder().encode('OFF'));
-            debugElem.textContent += 'Sent: OFF\n';
+        // Start notifications
+        return characteristic.startNotifications().then(() => {
+            characteristic.addEventListener('characteristicvaluechanged', event => {
+                const value = new TextDecoder().decode(event.target.value);
+                debugElem.textContent += `Notification received: ${value}\n`;
+            });
         });
     })
     .catch(error => {
         console.error(error);
-        statusElem.textContent = 'Error connecting to BLE device';
+        statusElem.textContent = `Error: ${error.message}`;
         debugElem.textContent += `Error: ${error.message}\n`;
     });
 });
