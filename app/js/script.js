@@ -39,4 +39,6 @@ document.querySelector('#connect').addEventListener('click', function () {
     .catch(error => {
         console.error(error);
         statusElem.textContent = 'Error connecting to BLE device';
-        debug
+        debugElem.textContent += `Error: ${error.message}\n`;
+    });
+});
