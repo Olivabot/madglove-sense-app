@@ -45,8 +45,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 scales: {
                     x: { title: { display: true, text: 'Time (ms)' } },
                     y: {
-                        suggestedMin: -250,
-                        suggestedMax: 250,
+                        suggestedMin: -100,
+                        suggestedMax: 100,
                         title: { display: true, text: yLabel }
                     }
                 },
@@ -76,7 +76,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const imu2AccelX = window.latestIMUData[9], imu2AccelY = window.latestIMUData[10], imu2AccelZ = window.latestIMUData[11];
             const imu2GyroX = window.latestIMUData[12], imu2GyroY = window.latestIMUData[13], imu2GyroZ = window.latestIMUData[14];
 
-            const maxDataPoints = 50; // Rolling window size
+            const maxDataPoints = 25; // Rolling window size
 
             // Update IMU1 Accelerometer Chart
             imu1AccelChart.data.datasets[0].data = [imu1AccelX, imu1AccelY, imu1AccelZ];
