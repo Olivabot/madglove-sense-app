@@ -16,40 +16,19 @@ document.addEventListener('DOMContentLoaded', () => {
             },
             options: {
                 indexAxis: 'y', // Horizontal bars
-                elements: {
-                    bar: {
-                        barThickness: 15, // Controls bar height
-                        maxBarThickness: 20, // Ensures the bars don’t get too large
-                    }
-                },
-                layout: {
-                    padding: {
-                        top: 10, // Reduce padding around the chart
-                        bottom: 10,
-                    }
-                },
                 scales: {
                     x: {
                         suggestedMin: -1.1,
                         suggestedMax: 1.1,
                         title: { display: true, text: yLabel }
-                    },
-                    y: {
-                        ticks: {
-                            font: {
-                                size: 10 // Reduce font size for Y-axis labels
-                            }
-                        }
                     }
                 },
                 responsive: true,
-                maintainAspectRatio: false, // Allows height to be controlled programmatically
                 animation: { duration: 300 },
                 plugins: { legend: { display: false } }
             }
         });
     };
-
 
     // Function to create a line chart with interpolation
     const createLineChart = (ctx, label, yLabel) => {
