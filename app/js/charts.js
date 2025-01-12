@@ -1,88 +1,121 @@
 document.addEventListener('DOMContentLoaded', () => {
-    // Create Line Chart
-    const createLineChart = (ctx, label, yLabel) => {
+    const createBarChartWithBorderRadius = (ctx, label, yLabel) => {
         return new Chart(ctx, {
-            type: 'line',
+            type: 'bar',
             data: {
-                labels: [], // Time labels
+                labels: ['X (+/-)', 'Y (+/-)', 'Z (+/-)'], // Labels for axes
                 datasets: [
-                    { label: `${label} X`, data: [], borderColor: 'red', fill: false },
-                    { label: `${label} Y`, data: [], borderColor: 'green', fill: false },
-                    { label: `${label} Z`, data: [], borderColor: 'blue', fill: false }
+                    {
+                        label: `${label} (+)`,
+                        data: [0, 0, 0], // Positive values for X, Y, Z
+                        backgroundColor: ['#ff6384', '#36a2eb', '#4caf50'], // Positive colors
+                        borderWidth: 2,
+                        borderRadius: 10, // Rounded corners
+                        borderSkipped: false
+                    },
+                    {
+                        label: `${label} (-)`,
+                        data: [0, 0, 0], // Negative values for X, Y, Z
+                        backgroundColor: ['#ff9f40', '#4bc0c0', '#ffcd56'], // Negative colors
+                        borderWidth: 2,
+                        borderRadius: 10, // Rounded corners
+                        borderSkipped: false
+                    }
                 ]
             },
             options: {
                 responsive: true,
-                animation: {
-                    duration: 500, // Smooth animation
-                    easing: 'easeOutQuad'
-                },
                 scales: {
                     x: {
-                        title: { display: true, text: 'Time (ms)' }
+                        stacked: true, // Stacked bars for positive and negative
+                        title: {
+                            display: true,
+                            text: 'Axes'
+                        }
                     },
                     y: {
-                        title: { display: true, text: yLabel },
-                        suggestedMin: -2, // Adjusted for accelerometer/gyroscope range
+                        stacked: true, // Stacked bars
+                        title: {
+                            display: true,
+                            text: yLabel
+                        },
+                        suggestedMin: -2, // Adjusted range for data
                         suggestedMax: 2
                     }
                 },
                 plugins: {
-                    legend: { display: true },
-                    tooltip: { enabled: true }
+                    legend: {
+                        position: 'top'
+                    },
+                    tooltip: {
+                        callbacks: {
+                            label: (context) => {
+                                return `${context.dataset.label}: ${context.raw.toFixed(2)} ${yLabel}`;
+                            }
+                        }
+                    }
+                },
+                animation: {
+                    duration: 500,
+                    easing: 'easeOutQuad'
                 }
             }
         });
     };
 
-    // Initialize Charts
-    const imu2AccelCtx = document.getElementById('imu2AccelChart').getContext('2d');
-    const imu2GyroCtx = document.getElementById('imu2GyroChart').getContext('2d');
+    // Initialize bar charts
+    const imu2AccelBarCtx = document.getElementById('imu2AccelBarChart').getContext('2d');
+    const imu2GyroBarCtx = document.getElementById('imu2GyroBarChart').getContext('2d');
 
-    const imu2AccelChart = createLineChart(imu2AccelCtx, 'Accel', 'Acceleration (g)');
-    const imu2GyroChart = createLineChart(imu2GyroCtx, 'Gyro', 'Rotation (°/s)');
+    const imu2AccelBarChart = createBarChartWithBorderRadius(
+        imu2AccelBarCtx,
+        'Accelerometer',
+        'Acceleration (g)'
+    );
+    const imu2GyroBarChart = createBarChartWithBorderRadius(
+        imu2GyroBarCtx,
+        'Gyroscope',
+        'Rotation (°/s)'
+    );
 
     // Real-time data update
     setInterval(() => {
         if (window.latestIMUData) {
-            const timestamp = window.latestIMUData[0];
+            // Extract IMU2 accelerometer data
             const imu2AccelX = window.latestIMUData[9];
             const imu2AccelY = window.latestIMUData[10];
             const imu2AccelZ = window.latestIMUData[11];
 
+            // Extract IMU2 gyroscope data
             const imu2GyroX = window.latestIMUData[12];
             const imu2GyroY = window.latestIMUData[13];
             const imu2GyroZ = window.latestIMUData[14];
 
-            const maxDataPoints = 50; // Rolling window size
+            // Update accelerometer bar chart
+            imu2AccelBarChart.data.datasets[0].data = [
+                Math.max(imu2AccelX, 0),
+                Math.max(imu2AccelY, 0),
+                Math.max(imu2AccelZ, 0)
+            ];
+            imu2AccelBarChart.data.datasets[1].data = [
+                Math.abs(Math.min(imu2AccelX, 0)),
+                Math.abs(Math.min(imu2AccelY, 0)),
+                Math.abs(Math.min(imu2AccelZ, 0))
+            ];
+            imu2AccelBarChart.update('none');
 
-            // Update Accelerometer Chart
-            imu2AccelChart.data.labels.push(timestamp);
-            imu2AccelChart.data.datasets[0].data.push(imu2AccelX);
-            imu2AccelChart.data.datasets[1].data.push(imu2AccelY);
-            imu2AccelChart.data.datasets[2].data.push(imu2AccelZ);
-
-            // Limit Accelerometer Data Points
-            if (imu2AccelChart.data.labels.length > maxDataPoints) {
-                imu2AccelChart.data.labels.shift();
-                imu2AccelChart.data.datasets.forEach(dataset => dataset.data.shift());
-            }
-
-            imu2AccelChart.update('none');
-
-            // Update Gyroscope Chart
-            imu2GyroChart.data.labels.push(timestamp);
-            imu2GyroChart.data.datasets[0].data.push(imu2GyroX);
-            imu2GyroChart.data.datasets[1].data.push(imu2GyroY);
-            imu2GyroChart.data.datasets[2].data.push(imu2GyroZ);
-
-            // Limit Gyroscope Data Points
-            if (imu2GyroChart.data.labels.length > maxDataPoints) {
-                imu2GyroChart.data.labels.shift();
-                imu2GyroChart.data.datasets.forEach(dataset => dataset.data.shift());
-            }
-
-            imu2GyroChart.update('none');
+            // Update gyroscope bar chart
+            imu2GyroBarChart.data.datasets[0].data = [
+                Math.max(imu2GyroX, 0),
+                Math.max(imu2GyroY, 0),
+                Math.max(imu2GyroZ, 0)
+            ];
+            imu2GyroBarChart.data.datasets[1].data = [
+                Math.abs(Math.min(imu2GyroX, 0)),
+                Math.abs(Math.min(imu2GyroY, 0)),
+                Math.abs(Math.min(imu2GyroZ, 0))
+            ];
+            imu2GyroBarChart.update('none');
         }
     }, 100); // Update every 100ms
 });
