@@ -11,9 +11,8 @@ document.addEventListener('DOMContentLoaded', () => {
     const debugLog = []; // Array to hold debug messages
     const DEBUG_LOG_LIMIT = 10; // Limit debug log size
 
-    // Global buffer to hold recent IMU data
-    window.imuDataBuffer = []; // Accessible globally
-    const IMU_DATA_BUFFER_LIMIT = 100; // Maximum number of records to store
+    // Global variable to store the latest IMU data
+    window.latestIMUData = null;
 
     connectBtn.addEventListener('click', async () => {
         statusElem.textContent = 'Scanning for devices...';
@@ -57,23 +56,26 @@ document.addEventListener('DOMContentLoaded', () => {
                     gyro: { x: parseFloat(values[12]), y: parseFloat(values[13]), z: parseFloat(values[14]) }
                 };
 
-                // Add the parsed data to the global buffer
-                const imuRecord = {
+                // Store the latest IMU data in a global variable
+                window.latestIMUData = [
                     timestamp,
                     temperature,
                     pressure,
-                    imu1,
-                    imu2
-                };
+                    imu1.accel.x,
+                    imu1.accel.y,
+                    imu1.accel.z,
+                    imu1.gyro.x,
+                    imu1.gyro.y,
+                    imu1.gyro.z,
+                    imu2.accel.x,
+                    imu2.accel.y,
+                    imu2.accel.z,
+                    imu2.gyro.x,
+                    imu2.gyro.y,
+                    imu2.gyro.z
+                ];
 
-                window.imuDataBuffer.push(imuRecord);
-
-                // Ensure the buffer does not exceed the limit
-                if (window.imuDataBuffer.length > IMU_DATA_BUFFER_LIMIT) {
-                    window.imuDataBuffer.shift(); // Remove the oldest record
-                }
-
-                console.log('IMU Data Buffer Updated:', window.imuDataBuffer);
+                console.log('Latest IMU Data Updated:', window.latestIMUData);
 
                 // Display the latest data
                 dataElem.innerHTML = `
