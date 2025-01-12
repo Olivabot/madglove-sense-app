@@ -17,24 +17,14 @@ document.addEventListener('DOMContentLoaded', () => {
                 filters: [{ services: ['4fafc201-1fb5-459e-8fcc-c5c9c331914b'] }]
             });
 
-            debugElem.textContent += `Found device: ${device.name}\n`;
             statusElem.textContent = 'Connecting...';
-
-            device.addEventListener('gattserverdisconnected', () => {
-                statusElem.textContent = 'Disconnected';
-                debugElem.textContent += 'Device disconnected\n';
-                startBtn.disabled = true;
-                stopBtn.disabled = true;
-            });
 
             const server = await device.gatt.connect();
             const service = await server.getPrimaryService('4fafc201-1fb5-459e-8fcc-c5c9c331914b');
             characteristic = await service.getCharacteristic('beb5483e-36e1-4688-b7f5-ea07361b26a8');
 
-            debugElem.textContent += 'Characteristic found!\n';
             statusElem.textContent = 'Connected! Ready to receive data';
 
-            // Enable Start/Stop buttons
             startBtn.disabled = false;
             stopBtn.disabled = false;
 
@@ -42,9 +32,8 @@ document.addEventListener('DOMContentLoaded', () => {
             await characteristic.startNotifications();
             characteristic.addEventListener('characteristicvaluechanged', event => {
                 const rawData = new TextDecoder().decode(event.target.value);
-                debugElem.textContent += `Data received: ${rawData}\n`;
 
-                // Parse data
+                // Parse and display only the latest data
                 const values = rawData.split(',');
                 const timestamp = values[0];
                 const temperature = values[1];
@@ -68,11 +57,13 @@ document.addEventListener('DOMContentLoaded', () => {
                     <b>IMU2 Accel:</b> X=${imu2.accel.x}, Y=${imu2.accel.y}, Z=${imu2.accel.z}<br>
                     <b>IMU2 Gyro:</b> X=${imu2.gyro.x}, Y=${imu2.gyro.y}, Z=${imu2.gyro.z}<br>
                 `;
+
+                // Optionally, show the last debug message (only one)
+                debugElem.textContent = `Data received: ${rawData}`;
             });
         } catch (error) {
             console.error(error);
             statusElem.textContent = `Error: ${error.message}`;
-            debugElem.textContent += `Error: ${error.message}\n`;
         }
     });
 
@@ -80,7 +71,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (characteristic) {
             const command = new TextEncoder().encode('START');
             characteristic.writeValue(command).then(() => {
-                debugElem.textContent += 'Sent: START\n';
+                statusElem.textContent = 'Streaming started...';
             });
         }
     });
@@ -89,7 +80,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (characteristic) {
             const command = new TextEncoder().encode('STOP');
             characteristic.writeValue(command).then(() => {
-                debugElem.textContent += 'Sent: STOP\n';
+                statusElem.textContent = 'Streaming stopped.';
             });
         }
     });
