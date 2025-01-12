@@ -1,4 +1,5 @@
 document.addEventListener('DOMContentLoaded', () => {
+    
     // Function to create a horizontal bar chart
     const createBarChart = (ctx, label, yLabel) => {
         return new Chart(ctx, {
@@ -15,6 +16,12 @@ document.addEventListener('DOMContentLoaded', () => {
             },
             options: {
                 indexAxis: 'y', // Horizontal bars
+                elements: {
+                    bar: {
+                        barThickness: 10, // Set bar thickness to make the bars smaller
+                        maxBarThickness: 10, // Optional: Ensure bars don’t exceed this value
+                    }
+                },
                 scales: {
                     x: {
                         suggestedMin: -1.1,
