@@ -11,6 +11,10 @@ document.addEventListener('DOMContentLoaded', () => {
     const debugLog = []; // Array to hold debug messages
     const DEBUG_LOG_LIMIT = 10; // Limit debug log size
 
+    // Global buffer to hold recent IMU data
+    window.imuDataBuffer = []; // Accessible globally
+    const IMU_DATA_BUFFER_LIMIT = 100; // Maximum number of records to store
+
     connectBtn.addEventListener('click', async () => {
         statusElem.textContent = 'Scanning for devices...';
         debugElem.textContent = '';
@@ -39,19 +43,37 @@ document.addEventListener('DOMContentLoaded', () => {
             characteristic.addEventListener('characteristicvaluechanged', event => {
                 const rawData = new TextDecoder().decode(event.target.value);
 
-                // Update the current data display
+                // Parse the data
                 const values = rawData.split(',');
-                const timestamp = values[0];
-                const temperature = values[1];
-                const pressure = values[2];
+                const timestamp = parseFloat(values[0]);
+                const temperature = parseFloat(values[1]);
+                const pressure = parseFloat(values[2]);
                 const imu1 = {
-                    accel: { x: values[3], y: values[4], z: values[5] },
-                    gyro: { x: values[6], y: values[7], z: values[8] }
+                    accel: { x: parseFloat(values[3]), y: parseFloat(values[4]), z: parseFloat(values[5]) },
+                    gyro: { x: parseFloat(values[6]), y: parseFloat(values[7]), z: parseFloat(values[8]) }
                 };
                 const imu2 = {
-                    accel: { x: values[9], y: values[10], z: values[11] },
-                    gyro: { x: values[12], y: values[13], z: values[14] }
+                    accel: { x: parseFloat(values[9]), y: parseFloat(values[10]), z: parseFloat(values[11]) },
+                    gyro: { x: parseFloat(values[12]), y: parseFloat(values[13]), z: parseFloat(values[14]) }
                 };
+
+                // Add the parsed data to the global buffer
+                const imuRecord = {
+                    timestamp,
+                    temperature,
+                    pressure,
+                    imu1,
+                    imu2
+                };
+
+                window.imuDataBuffer.push(imuRecord);
+
+                // Ensure the buffer does not exceed the limit
+                if (window.imuDataBuffer.length > IMU_DATA_BUFFER_LIMIT) {
+                    window.imuDataBuffer.shift(); // Remove the oldest record
+                }
+
+                console.log('IMU Data Buffer Updated:', window.imuDataBuffer);
 
                 // Display the latest data
                 dataElem.innerHTML = `
@@ -113,55 +135,4 @@ document.addEventListener('DOMContentLoaded', () => {
         statusElem.textContent = 'Device disconnected. Resetting...';
         resetConnection();
     }
-
-    // --------------------------------------------
-    // ---> Chart.js Initialization (Add here at the END inside DOMContentLoaded)
-    // --------------------------------------------
-    const ctx = document.getElementById('imu2AccelChart').getContext('2d');
-    const imu2AccelChart = new Chart(ctx, {
-        type: 'line',
-        data: {
-            labels: [], // Time labels
-            datasets: [
-                { label: 'Accel X', data: [], borderColor: 'red', fill: false },
-                { label: 'Accel Y', data: [], borderColor: 'green', fill: false },
-                { label: 'Accel Z', data: [], borderColor: 'blue', fill: false }
-            ]
-        },
-        options: {
-            animation: false,
-            responsive: true,
-            scales: {
-                x: {
-                    type: 'linear', // Time scale
-                    title: { display: true, text: 'Time (ms)' }
-                },
-                y: {
-                    title: { display: true, text: 'Acceleration (g)' },
-                    suggestedMin: -2,
-                    suggestedMax: 2
-                }
-            }
-        }
-    });
-
-    // Chart Update Function
-    function updateIMU2Chart(timestamp, accelX, accelY, accelZ) {
-        const maxDataPoints = 100; // Rolling window size
-
-        // Add new data
-        imu2AccelChart.data.labels.push(timestamp);
-        imu2AccelChart.data.datasets[0].data.push(accelX);
-        imu2AccelChart.data.datasets[1].data.push(accelY);
-        imu2AccelChart.data.datasets[2].data.push(accelZ);
-
-        // Limit data points
-        if (imu2AccelChart.data.labels.length > maxDataPoints) {
-            imu2AccelChart.data.labels.shift();
-            imu2AccelChart.data.datasets.forEach(dataset => dataset.data.shift());
-        }
-
-        imu2AccelChart.update('none'); // Update chart without animation
-    }
-    
 });
