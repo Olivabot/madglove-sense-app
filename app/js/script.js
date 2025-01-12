@@ -6,16 +6,22 @@ document.addEventListener('DOMContentLoaded', () => {
     const startBtn = document.querySelector('#start');
     const stopBtn = document.querySelector('#stop');
 
+    let device = null;
     let characteristic = null;
+    const debugLog = []; // Array to hold debug messages
+    const DEBUG_LOG_LIMIT = 10; // Limit debug log size
 
     connectBtn.addEventListener('click', async () => {
         statusElem.textContent = 'Scanning for devices...';
         debugElem.textContent = '';
+        resetConnection();
 
         try {
-            const device = await navigator.bluetooth.requestDevice({
+            device = await navigator.bluetooth.requestDevice({
                 filters: [{ services: ['4fafc201-1fb5-459e-8fcc-c5c9c331914b'] }]
             });
+
+            device.addEventListener('gattserverdisconnected', onDisconnected);
 
             statusElem.textContent = 'Connecting...';
 
@@ -33,7 +39,7 @@ document.addEventListener('DOMContentLoaded', () => {
             characteristic.addEventListener('characteristicvaluechanged', event => {
                 const rawData = new TextDecoder().decode(event.target.value);
 
-                // Parse and display only the latest data
+                // Update the current data display
                 const values = rawData.split(',');
                 const timestamp = values[0];
                 const temperature = values[1];
@@ -47,7 +53,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     gyro: { x: values[12], y: values[13], z: values[14] }
                 };
 
-                // Display parsed data
+                // Display the latest data
                 dataElem.innerHTML = `
                     <b>Timestamp:</b> ${timestamp} ms<br>
                     <b>Temperature:</b> ${temperature} °C<br>
@@ -58,12 +64,17 @@ document.addEventListener('DOMContentLoaded', () => {
                     <b>IMU2 Gyro:</b> X=${imu2.gyro.x}, Y=${imu2.gyro.y}, Z=${imu2.gyro.z}<br>
                 `;
 
-                // Optionally, show the last debug message (only one)
-                debugElem.textContent = `Data received: ${rawData}`;
+                // Update debug log
+                debugLog.push(rawData); // Add the latest message
+                if (debugLog.length > DEBUG_LOG_LIMIT) {
+                    debugLog.shift(); // Remove the oldest message if over the limit
+                }
+                debugElem.textContent = debugLog.join('\n'); // Display the log
             });
         } catch (error) {
             console.error(error);
             statusElem.textContent = `Error: ${error.message}`;
+            resetConnection();
         }
     });
 
@@ -84,4 +95,22 @@ document.addEventListener('DOMContentLoaded', () => {
             });
         }
     });
+
+    function resetConnection() {
+        if (device) {
+            if (device.gatt.connected) {
+                device.gatt.disconnect();
+            }
+            device = null;
+        }
+        characteristic = null;
+        startBtn.disabled = true;
+        stopBtn.disabled = true;
+        statusElem.textContent = 'Disconnected.';
+    }
+
+    function onDisconnected() {
+        statusElem.textContent = 'Device disconnected. Resetting...';
+        resetConnection();
+    }
 });
