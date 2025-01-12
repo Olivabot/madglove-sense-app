@@ -1,21 +1,7 @@
 document.addEventListener('DOMContentLoaded', () => {
-    const ctx = document.getElementById('imu2AccelChart').getContext('2d');
-
-    // Create horizontal bar chart
-    const imu2AccelChart = new Chart(ctx, {
+    // Create chart options with adjusted scale
+    const chartOptions = {
         type: 'bar',
-        data: {
-            labels: ['Accel X', 'Accel Y', 'Accel Z'],
-            datasets: [
-                {
-                    label: 'Acceleration (g)',
-                    data: [0, 0, 0],
-                    backgroundColor: ['#ff6384', '#36a2eb', '#4caf50'],
-                    borderColor: ['#ff6384', '#36a2eb', '#4caf50'],
-                    borderWidth: 1
-                }
-            ]
-        },
         options: {
             indexAxis: 'y',
             scales: {
@@ -24,8 +10,8 @@ document.addEventListener('DOMContentLoaded', () => {
                         display: true,
                         text: 'Acceleration (g)'
                     },
-                    min: -2,
-                    max: 2
+                    min: -1.1, // Adjusted minimum
+                    max: 1.1  // Adjusted maximum
                 },
                 y: {
                     title: {
@@ -52,25 +38,75 @@ document.addEventListener('DOMContentLoaded', () => {
                 easing: 'easeOutQuart'
             }
         }
+    };
+
+    // Initialize IMU1 Accelerometer Chart
+    const imu1AccelCtx = document.getElementById('imu1AccelChart').getContext('2d');
+    const imu1AccelChart = new Chart(imu1AccelCtx, {
+        ...chartOptions,
+        data: {
+            labels: ['Accel X', 'Accel Y', 'Accel Z'],
+            datasets: [
+                {
+                    label: 'Acceleration (g)',
+                    data: [0, 0, 0],
+                    backgroundColor: ['#ff6384', '#36a2eb', '#4caf50'],
+                    borderColor: ['#ff6384', '#36a2eb', '#4caf50'],
+                    borderWidth: 1
+                }
+            ]
+        }
     });
 
-    // Real-time data update
-    let previousData = [0, 0, 0]; // Initial data for X, Y, Z
+    // Initialize IMU2 Accelerometer Chart
+    const imu2AccelCtx = document.getElementById('imu2AccelChart').getContext('2d');
+    const imu2AccelChart = new Chart(imu2AccelCtx, {
+        ...chartOptions,
+        data: {
+            labels: ['Accel X', 'Accel Y', 'Accel Z'],
+            datasets: [
+                {
+                    label: 'Acceleration (g)',
+                    data: [0, 0, 0],
+                    backgroundColor: ['#ff6384', '#36a2eb', '#4caf50'],
+                    borderColor: ['#ff6384', '#36a2eb', '#4caf50'],
+                    borderWidth: 1
+                }
+            ]
+        }
+    });
+
+    // Real-time data update for both charts
+    let imu1PreviousData = [0, 0, 0]; // Initial data for IMU1
+    let imu2PreviousData = [0, 0, 0]; // Initial data for IMU2
 
     setInterval(() => {
         if (window.latestIMUData) {
+            const imu1AccelX = window.latestIMUData[3];
+            const imu1AccelY = window.latestIMUData[4];
+            const imu1AccelZ = window.latestIMUData[5];
+
             const imu2AccelX = window.latestIMUData[9];
             const imu2AccelY = window.latestIMUData[10];
             const imu2AccelZ = window.latestIMUData[11];
 
-            // Interpolate values for smooth transitions
-            previousData[0] += (imu2AccelX - previousData[0]) * 0.2;
-            previousData[1] += (imu2AccelY - previousData[1]) * 0.2;
-            previousData[2] += (imu2AccelZ - previousData[2]) * 0.2;
+            // Interpolate for IMU1
+            imu1PreviousData[0] += (imu1AccelX - imu1PreviousData[0]) * 0.2;
+            imu1PreviousData[1] += (imu1AccelY - imu1PreviousData[1]) * 0.2;
+            imu1PreviousData[2] += (imu1AccelZ - imu1PreviousData[2]) * 0.2;
 
-            // Update chart data
-            imu2AccelChart.data.datasets[0].data = [...previousData];
-            imu2AccelChart.update('active');
+            // Update IMU1 Chart
+            imu1AccelChart.data.datasets[0].data = [...imu1PreviousData];
+            imu1AccelChart.update('none');
+
+            // Interpolate for IMU2
+            imu2PreviousData[0] += (imu2AccelX - imu2PreviousData[0]) * 0.2;
+            imu2PreviousData[1] += (imu2AccelY - imu2PreviousData[1]) * 0.2;
+            imu2PreviousData[2] += (imu2AccelZ - imu2PreviousData[2]) * 0.2;
+
+            // Update IMU2 Chart
+            imu2AccelChart.data.datasets[0].data = [...imu2PreviousData];
+            imu2AccelChart.update('none');
         }
     }, 100); // Update every 100ms
 });
