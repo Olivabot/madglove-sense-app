@@ -17,8 +17,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 indexAxis: 'y', // Horizontal bars
                 scales: {
                     x: {
-                        suggestedMin: -1.5,
-                        suggestedMax: 1.5,
+                        suggestedMin: -1.1,
+                        suggestedMax: 1.1,
                         title: { display: true, text: yLabel }
                     }
                 },
