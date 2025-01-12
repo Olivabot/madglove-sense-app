@@ -24,23 +24,32 @@
         <pre id="debug" class="border p-3 bg-light">Debug log will appear here.</pre>
 
     </div>
+    
 
     <h2 class="text-center mb-4">IMU Data Visualization</h2>
     <div class="row">
         <!-- IMU1 -->
         <div class="col-md-6">
-            <h3 class="text-center">IMU1 Accelerometer</h3>
-            <canvas id="imu1AccelChart"></canvas>
-            <h3 class="text-center mt-4">IMU1 Gyroscope</h3>
-            <canvas id="imu1GyroChart"></canvas>
+            <div class="chart-container" style="height: 15vh;"> <!-- Reduced height -->
+                <h5 class="text-center">IMU1 Accelerometer</h5>
+                <canvas id="imu1AccelChart"></canvas>
+            </div>
+            <div class="chart-container" style="height: 30vh;"> <!-- Default height -->
+                <h5 class="text-center mt-4">IMU1 Gyroscope</h5>
+                <canvas id="imu1GyroChart"></canvas>
+            </div>
         </div>
-
+    
         <!-- IMU2 -->
         <div class="col-md-6">
-            <h3 class="text-center">IMU2 Accelerometer</h3>
-            <canvas id="imu2AccelChart"></canvas>
-            <h3 class="text-center mt-4">IMU2 Gyroscope</h3>
-            <canvas id="imu2GyroChart"></canvas>
+            <div class="chart-container" style="height: 15vh;"> <!-- Reduced height -->
+                <h5 class="text-center">IMU2 Accelerometer</h5>
+                <canvas id="imu2AccelChart"></canvas>
+            </div>
+            <div class="chart-container" style="height: 30vh;"> <!-- Default height -->
+                <h5 class="text-center mt-4">IMU2 Gyroscope</h5>
+                <canvas id="imu2GyroChart"></canvas>
+            </div>
         </div>
     </div>
 
