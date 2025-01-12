@@ -1,41 +1,43 @@
-document.querySelector('#connect').addEventListener('click', function () {
+document.addEventListener('DOMContentLoaded', () => {
     const statusElem = document.querySelector('#status');
     const debugElem = document.querySelector('#debug');
     const dataElem = document.querySelector('#data');
-
-    statusElem.textContent = 'Scanning for devices...';
-    debugElem.textContent = '';
     let characteristic;
 
-    navigator.bluetooth.requestDevice({
-        filters: [{ services: ['4fafc201-1fb5-459e-8fcc-c5c9c331914b'] }]
-    })
-    .then(device => {
-        debugElem.textContent += `Found device: ${device.name}\n`;
-        statusElem.textContent = 'Connecting...';
+    // Connect button
+    document.querySelector('#connect').addEventListener('click', () => {
+        console.log('Connecting to BLE device...');
+        navigator.bluetooth.requestDevice({
+            filters: [{ services: ['4fafc201-1fb5-459e-8fcc-c5c9c331914b'] }]
+        })
+        .then(device => {
+            console.log(`Found device: ${device.name}`);
+            return device.gatt.connect();
+        })
+        .then(server => server.getPrimaryService('4fafc201-1fb5-459e-8fcc-c5c9c331914b'))
+        .then(service => service.getCharacteristic('beb5483e-36e1-4688-b7f5-ea07361b26a8'))
+        .then(char => {
+            characteristic = char;
+            console.log('Characteristic found');
+            statusElem.textContent = 'Connected! Ready to receive data';
 
-        device.addEventListener('gattserverdisconnected', () => {
-            statusElem.textContent = 'Disconnected';
-            debugElem.textContent += 'Device disconnected\n';
-        });
-
-        return device.gatt.connect();
-    })
-    .then(server => server.getPrimaryService('4fafc201-1fb5-459e-8fcc-c5c9c331914b'))
-    .then(service => service.getCharacteristic('beb5483e-36e1-4688-b7f5-ea07361b26a8'))
-    .then(char => {
-        characteristic = char;
-        debugElem.textContent += 'Characteristic found!\n';
-        statusElem.textContent = 'Connected! Ready to receive data';
-
-        // Start notifications
-        return characteristic.startNotifications().then(() => {
+            return characteristic.startNotifications();
+        })
+        .then(() => {
+            console.log('Notifications started');
             characteristic.addEventListener('characteristicvaluechanged', event => {
                 const rawData = new TextDecoder().decode(event.target.value);
-                debugElem.textContent += `Data received: ${rawData}\n`;
+                console.log(`Data received: ${rawData}`);
+                debugElem.textContent += `Data: ${rawData}\n`;
 
-                // Parse data
+                // Parse and display data
                 const values = rawData.split(',');
+                if (values.length < 15) {
+                    console.error('Incomplete data received');
+                    debugElem.textContent += 'Error: Incomplete data received\n';
+                    return;
+                }
+
                 const timestamp = values[0];
                 const temperature = values[1];
                 const pressure = values[2];
@@ -48,7 +50,6 @@ document.querySelector('#connect').addEventListener('click', function () {
                     gyro: { x: values[12], y: values[13], z: values[14] }
                 };
 
-                // Display parsed data
                 dataElem.innerHTML = `
                     <b>Timestamp:</b> ${timestamp} ms<br>
                     <b>Temperature:</b> ${temperature} °C<br>
@@ -59,29 +60,43 @@ document.querySelector('#connect').addEventListener('click', function () {
                     <b>IMU2 Gyro:</b> X=${imu2.gyro.x}, Y=${imu2.gyro.y}, Z=${imu2.gyro.z}<br>
                 `;
             });
+        })
+        .catch(error => {
+            console.error('Error during BLE setup:', error);
+            statusElem.textContent = `Error: ${error.message}`;
+            debugElem.textContent += `Error: ${error.message}\n`;
         });
-    })
-    .catch(error => {
-        console.error(error);
-        statusElem.textContent = `Error: ${error.message}`;
-        debugElem.textContent += `Error: ${error.message}\n`;
     });
 
+    // Start streaming button
     document.querySelector('#start').addEventListener('click', () => {
         if (characteristic) {
             const command = new TextEncoder().encode('START');
             characteristic.writeValue(command).then(() => {
+                console.log('Sent START command');
                 debugElem.textContent += 'Sent: START\n';
+            }).catch(err => {
+                console.error('Failed to send START:', err);
+                debugElem.textContent += `Error sending START: ${err.message}\n`;
             });
+        } else {
+            console.error('Characteristic not available. Connect to the BLE device first.');
         }
     });
 
+    // Stop streaming button
     document.querySelector('#stop').addEventListener('click', () => {
         if (characteristic) {
             const command = new TextEncoder().encode('STOP');
             characteristic.writeValue(command).then(() => {
+                console.log('Sent STOP command');
                 debugElem.textContent += 'Sent: STOP\n';
+            }).catch(err => {
+                console.error('Failed to send STOP:', err);
+                debugElem.textContent += `Error sending STOP: ${err.message}\n`;
             });
+        } else {
+            console.error('Characteristic not available. Connect to the BLE device first.');
         }
     });
 });
