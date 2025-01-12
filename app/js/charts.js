@@ -1,121 +1,98 @@
 document.addEventListener('DOMContentLoaded', () => {
-    const createBarChartWithBorderRadius = (ctx, label, yLabel) => {
+    const createInterpolationChart = (ctx, label) => {
         return new Chart(ctx, {
-            type: 'bar',
+            type: 'line',
             data: {
-                labels: ['X (+/-)', 'Y (+/-)', 'Z (+/-)'], // Labels for axes
+                labels: [], // Time labels
                 datasets: [
                     {
-                        label: `${label} (+)`,
-                        data: [0, 0, 0], // Positive values for X, Y, Z
-                        backgroundColor: ['#ff6384', '#36a2eb', '#4caf50'], // Positive colors
-                        borderWidth: 2,
-                        borderRadius: 10, // Rounded corners
-                        borderSkipped: false
+                        label: `${label} - Cubic Interpolation (monotone)`,
+                        data: [], // IMU2 Accelerometer X
+                        borderColor: 'red',
+                        fill: false,
+                        cubicInterpolationMode: 'monotone',
+                        tension: 0.4
                     },
                     {
-                        label: `${label} (-)`,
-                        data: [0, 0, 0], // Negative values for X, Y, Z
-                        backgroundColor: ['#ff9f40', '#4bc0c0', '#ffcd56'], // Negative colors
-                        borderWidth: 2,
-                        borderRadius: 10, // Rounded corners
-                        borderSkipped: false
+                        label: `${label} - Cubic Interpolation`,
+                        data: [], // IMU2 Accelerometer Y
+                        borderColor: 'blue',
+                        fill: false,
+                        tension: 0.4
+                    },
+                    {
+                        label: `${label} - Linear Interpolation`,
+                        data: [], // IMU2 Accelerometer Z
+                        borderColor: 'green',
+                        fill: false,
+                        tension: 0
                     }
                 ]
             },
             options: {
                 responsive: true,
+                plugins: {
+                    title: {
+                        display: true,
+                        text: 'Interpolation Modes for Accelerometer Data'
+                    },
+                    legend: {
+                        display: true,
+                        position: 'top'
+                    }
+                },
+                interaction: {
+                    intersect: false
+                },
                 scales: {
                     x: {
-                        stacked: true, // Stacked bars for positive and negative
+                        display: true,
                         title: {
                             display: true,
-                            text: 'Axes'
+                            text: 'Time (ms)'
                         }
                     },
                     y: {
-                        stacked: true, // Stacked bars
+                        display: true,
                         title: {
                             display: true,
-                            text: yLabel
+                            text: 'Acceleration (g)'
                         },
-                        suggestedMin: -2, // Adjusted range for data
-                        suggestedMax: 2
+                        suggestedMin: -1.5,
+                        suggestedMax: 1.5
                     }
-                },
-                plugins: {
-                    legend: {
-                        position: 'top'
-                    },
-                    tooltip: {
-                        callbacks: {
-                            label: (context) => {
-                                return `${context.dataset.label}: ${context.raw.toFixed(2)} ${yLabel}`;
-                            }
-                        }
-                    }
-                },
-                animation: {
-                    duration: 500,
-                    easing: 'easeOutQuad'
                 }
             }
         });
     };
 
-    // Initialize bar charts
-    const imu2AccelBarCtx = document.getElementById('imu2AccelBarChart').getContext('2d');
-    const imu2GyroBarCtx = document.getElementById('imu2GyroBarChart').getContext('2d');
+    // Initialize the interpolation chart
+    const imu2InterpolationCtx = document.getElementById('imu2InterpolationChart').getContext('2d');
+    const imu2InterpolationChart = createInterpolationChart(imu2InterpolationCtx, 'IMU2 Accelerometer');
 
-    const imu2AccelBarChart = createBarChartWithBorderRadius(
-        imu2AccelBarCtx,
-        'Accelerometer',
-        'Acceleration (g)'
-    );
-    const imu2GyroBarChart = createBarChartWithBorderRadius(
-        imu2GyroBarCtx,
-        'Gyroscope',
-        'Rotation (°/s)'
-    );
-
-    // Real-time data update
+    // Real-time update for interpolation chart
     setInterval(() => {
         if (window.latestIMUData) {
-            // Extract IMU2 accelerometer data
+            const timestamp = window.latestIMUData[0];
             const imu2AccelX = window.latestIMUData[9];
             const imu2AccelY = window.latestIMUData[10];
             const imu2AccelZ = window.latestIMUData[11];
 
-            // Extract IMU2 gyroscope data
-            const imu2GyroX = window.latestIMUData[12];
-            const imu2GyroY = window.latestIMUData[13];
-            const imu2GyroZ = window.latestIMUData[14];
+            const maxDataPoints = 50; // Rolling window size
 
-            // Update accelerometer bar chart
-            imu2AccelBarChart.data.datasets[0].data = [
-                Math.max(imu2AccelX, 0),
-                Math.max(imu2AccelY, 0),
-                Math.max(imu2AccelZ, 0)
-            ];
-            imu2AccelBarChart.data.datasets[1].data = [
-                Math.abs(Math.min(imu2AccelX, 0)),
-                Math.abs(Math.min(imu2AccelY, 0)),
-                Math.abs(Math.min(imu2AccelZ, 0))
-            ];
-            imu2AccelBarChart.update('none');
+            // Add new data points
+            imu2InterpolationChart.data.labels.push(timestamp);
+            imu2InterpolationChart.data.datasets[0].data.push(imu2AccelX); // X-axis data
+            imu2InterpolationChart.data.datasets[1].data.push(imu2AccelY); // Y-axis data
+            imu2InterpolationChart.data.datasets[2].data.push(imu2AccelZ); // Z-axis data
 
-            // Update gyroscope bar chart
-            imu2GyroBarChart.data.datasets[0].data = [
-                Math.max(imu2GyroX, 0),
-                Math.max(imu2GyroY, 0),
-                Math.max(imu2GyroZ, 0)
-            ];
-            imu2GyroBarChart.data.datasets[1].data = [
-                Math.abs(Math.min(imu2GyroX, 0)),
-                Math.abs(Math.min(imu2GyroY, 0)),
-                Math.abs(Math.min(imu2GyroZ, 0))
-            ];
-            imu2GyroBarChart.update('none');
+            // Limit data points
+            if (imu2InterpolationChart.data.labels.length > maxDataPoints) {
+                imu2InterpolationChart.data.labels.shift();
+                imu2InterpolationChart.data.datasets.forEach(dataset => dataset.data.shift());
+            }
+
+            imu2InterpolationChart.update('none');
         }
     }, 100); // Update every 100ms
 });
