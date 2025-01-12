@@ -1,61 +1,87 @@
 document.addEventListener('DOMContentLoaded', () => {
-    const createDirectionalPieChart = (ctx, label) => {
+    // Create Line Chart
+    const createLineChart = (ctx, label, yLabel) => {
         return new Chart(ctx, {
-            type: 'pie',
+            type: 'line',
             data: {
-                labels: ['Gyro X (+)', 'Gyro X (-)', 'Gyro Y (+)', 'Gyro Y (-)', 'Gyro Z (+)', 'Gyro Z (-)'],
-                datasets: [{
-                    label: label,
-                    data: [0, 0, 0, 0, 0, 0], // Initial values for positive/negative segments
-                    backgroundColor: ['#ff6384', '#ff9f40', '#36a2eb', '#4bc0c0', '#4caf50', '#ffcd56'], // Positive/Negative colors
-                    borderWidth: 1
-                }]
+                labels: [], // Time labels
+                datasets: [
+                    { label: `${label} X`, data: [], borderColor: 'red', fill: false },
+                    { label: `${label} Y`, data: [], borderColor: 'green', fill: false },
+                    { label: `${label} Z`, data: [], borderColor: 'blue', fill: false }
+                ]
             },
             options: {
                 responsive: true,
-                plugins: {
-                    legend: {
-                        position: 'top',
+                animation: {
+                    duration: 500, // Smooth animation
+                    easing: 'easeOutQuad'
+                },
+                scales: {
+                    x: {
+                        title: { display: true, text: 'Time (ms)' }
                     },
-                    tooltip: {
-                        callbacks: {
-                            label: (context) => {
-                                return `${context.label}: ${context.raw.toFixed(2)} °/s`;
-                            }
-                        }
+                    y: {
+                        title: { display: true, text: yLabel },
+                        suggestedMin: -2, // Adjusted for accelerometer/gyroscope range
+                        suggestedMax: 2
                     }
                 },
-                animation: {
-                    duration: 500,
-                    easing: 'easeOutQuad'
+                plugins: {
+                    legend: { display: true },
+                    tooltip: { enabled: true }
                 }
             }
         });
     };
 
-    // Create Pie Chart for IMU2 Gyroscope
-    const gyroCtx = document.getElementById('imu2GyroChart').getContext('2d');
-    const imu2GyroChart = createDirectionalPieChart(gyroCtx, 'IMU2 Gyroscope');
+    // Initialize Charts
+    const imu2AccelCtx = document.getElementById('imu2AccelChart').getContext('2d');
+    const imu2GyroCtx = document.getElementById('imu2GyroChart').getContext('2d');
 
-    // Real-time update for Gyroscope Data
+    const imu2AccelChart = createLineChart(imu2AccelCtx, 'Accel', 'Acceleration (g)');
+    const imu2GyroChart = createLineChart(imu2GyroCtx, 'Gyro', 'Rotation (°/s)');
+
+    // Real-time data update
     setInterval(() => {
         if (window.latestIMUData) {
-            const imu2GyroX = window.latestIMUData[12]; // Gyroscope X
-            const imu2GyroY = window.latestIMUData[13]; // Gyroscope Y
-            const imu2GyroZ = window.latestIMUData[14]; // Gyroscope Z
+            const timestamp = window.latestIMUData[0];
+            const imu2AccelX = window.latestIMUData[9];
+            const imu2AccelY = window.latestIMUData[10];
+            const imu2AccelZ = window.latestIMUData[11];
 
-            // Separate positive and negative values
-            const data = [
-                Math.max(imu2GyroX, 0), // Gyro X (+)
-                Math.abs(Math.min(imu2GyroX, 0)), // Gyro X (-)
-                Math.max(imu2GyroY, 0), // Gyro Y (+)
-                Math.abs(Math.min(imu2GyroY, 0)), // Gyro Y (-)
-                Math.max(imu2GyroZ, 0), // Gyro Z (+)
-                Math.abs(Math.min(imu2GyroZ, 0))  // Gyro Z (-)
-            ];
+            const imu2GyroX = window.latestIMUData[12];
+            const imu2GyroY = window.latestIMUData[13];
+            const imu2GyroZ = window.latestIMUData[14];
 
-            // Update Pie Chart Data
-            imu2GyroChart.data.datasets[0].data = data;
+            const maxDataPoints = 50; // Rolling window size
+
+            // Update Accelerometer Chart
+            imu2AccelChart.data.labels.push(timestamp);
+            imu2AccelChart.data.datasets[0].data.push(imu2AccelX);
+            imu2AccelChart.data.datasets[1].data.push(imu2AccelY);
+            imu2AccelChart.data.datasets[2].data.push(imu2AccelZ);
+
+            // Limit Accelerometer Data Points
+            if (imu2AccelChart.data.labels.length > maxDataPoints) {
+                imu2AccelChart.data.labels.shift();
+                imu2AccelChart.data.datasets.forEach(dataset => dataset.data.shift());
+            }
+
+            imu2AccelChart.update('none');
+
+            // Update Gyroscope Chart
+            imu2GyroChart.data.labels.push(timestamp);
+            imu2GyroChart.data.datasets[0].data.push(imu2GyroX);
+            imu2GyroChart.data.datasets[1].data.push(imu2GyroY);
+            imu2GyroChart.data.datasets[2].data.push(imu2GyroZ);
+
+            // Limit Gyroscope Data Points
+            if (imu2GyroChart.data.labels.length > maxDataPoints) {
+                imu2GyroChart.data.labels.shift();
+                imu2GyroChart.data.datasets.forEach(dataset => dataset.data.shift());
+            }
+
             imu2GyroChart.update('none');
         }
     }, 100); // Update every 100ms
