@@ -113,4 +113,55 @@ document.addEventListener('DOMContentLoaded', () => {
         statusElem.textContent = 'Device disconnected. Resetting...';
         resetConnection();
     }
+
+    // --------------------------------------------
+    // ---> Chart.js Initialization (Add here at the END inside DOMContentLoaded)
+    // --------------------------------------------
+    const ctx = document.getElementById('imu2AccelChart').getContext('2d');
+    const imu2AccelChart = new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: [], // Time labels
+            datasets: [
+                { label: 'Accel X', data: [], borderColor: 'red', fill: false },
+                { label: 'Accel Y', data: [], borderColor: 'green', fill: false },
+                { label: 'Accel Z', data: [], borderColor: 'blue', fill: false }
+            ]
+        },
+        options: {
+            animation: false,
+            responsive: true,
+            scales: {
+                x: {
+                    type: 'linear', // Time scale
+                    title: { display: true, text: 'Time (ms)' }
+                },
+                y: {
+                    title: { display: true, text: 'Acceleration (g)' },
+                    suggestedMin: -2,
+                    suggestedMax: 2
+                }
+            }
+        }
+    });
+
+    // Chart Update Function
+    function updateIMU2Chart(timestamp, accelX, accelY, accelZ) {
+        const maxDataPoints = 100; // Rolling window size
+
+        // Add new data
+        imu2AccelChart.data.labels.push(timestamp);
+        imu2AccelChart.data.datasets[0].data.push(accelX);
+        imu2AccelChart.data.datasets[1].data.push(accelY);
+        imu2AccelChart.data.datasets[2].data.push(accelZ);
+
+        // Limit data points
+        if (imu2AccelChart.data.labels.length > maxDataPoints) {
+            imu2AccelChart.data.labels.shift();
+            imu2AccelChart.data.datasets.forEach(dataset => dataset.data.shift());
+        }
+
+        imu2AccelChart.update('none'); // Update chart without animation
+    }
+    
 });
