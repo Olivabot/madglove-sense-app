@@ -10,12 +10,49 @@
 <body class="container mt-5">
     <h1>Madglove Sense</h1>
 
-     <div class="container mt-5">
+    <!-- Form to Collect Secrets from the User -->
+    <div class="mt-5">
+        <h3>Enter Credentials to Connect</h3>
+        <form id="authForm">
+            <div class="mb-3">
+                <label for="host" class="form-label">Host</label>
+                <input type="text" id="host" class="form-control" placeholder="api.customer.extrahorizon.io" required>
+            </div>
+            <div class="mb-3">
+                <label for="consumerKey" class="form-label">OAuth Consumer Key</label>
+                <input type="text" id="consumerKey" class="form-control" required>
+            </div>
+            <div class="mb-3">
+                <label for="consumerSecret" class="form-label">OAuth Consumer Secret</label>
+                <input type="password" id="consumerSecret" class="form-control" required>
+            </div>
+            <div class="mb-3">
+                <label for="email" class="form-label">Email</label>
+                <input type="email" id="email" class="form-control" required>
+            </div>
+            <div class="mb-3">
+                <label for="password" class="form-label">Password</label>
+                <input type="password" id="password" class="form-control" required>
+            </div>
+            <button type="submit" class="btn btn-primary">Connect</button>
+        </form>
+
+        <p id="connectionStatus" class="mt-3 text-info">Waiting for user input...</p>
+    </div>
+
+    <div class="container mt-5">
         <h2>BLE Sensor Data</h2>
         <p id="status" class="alert alert-info">Disconnected</p>
         <button id="connect" class="btn btn-primary">Connect to BLE Device</button>
         <button id="start" class="btn btn-success" disabled>Start Streaming</button>
         <button id="stop" class="btn btn-danger" disabled>Stop Streaming</button>
+
+        <br>
+        <div class="mt-3">
+            <button id="startRecording" class="btn btn-warning">Start Recording</button>
+            <button id="stopRecording" class="btn btn-secondary" disabled>Stop Recording</button>
+            <button id="downloadCSV" class="btn btn-info" disabled>Download CSV</button>
+        </div>    
     
         <h3 class="mt-4">Real-Time Sensor Data</h3>
         <div id="data" class="border p-3 bg-light">No data received yet.</div>
@@ -56,6 +93,8 @@
     
     <script src="app/js/script.js"></script>
     <script src="app/js/charts.js"></script>
+    <script src="app/js/recording.js"></script>
+    <script src="app/js/backend.js"></script>
 
 
 </body>
